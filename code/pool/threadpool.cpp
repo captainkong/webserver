@@ -17,6 +17,8 @@ void ThreadPool::initTask(ThreadPool *_pool)
     // std::cout << "线程id:" << std::this_thread::get_id() << std::endl;
     ThreadPool *pool = _pool;
     std::unique_lock<std::mutex> locker(pool->mut_);
+    timeval startTime, endTime;
+
     while (true)
     {
         // 首先判断是否退出线程
@@ -29,7 +31,12 @@ void ThreadPool::initTask(ThreadPool *_pool)
 
             // 让出锁,让其它抢锁拿任务
             locker.unlock();
+
+            gettimeofday(&startTime, NULL);
             task();
+            gettimeofday(&endTime, NULL);
+            int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+            cout << "线程执行用时:" << timeUsed << "us" << endl;
 
             // 执行完任务,继续抢锁 拿任务
             locker.lock();
