@@ -71,6 +71,13 @@ void Buffer::retrieveAll()
     readIndex_ = writeIndex_ = 0;
 }
 
+string Buffer::retrieveAllToString()
+{
+    string str(beginRead(), readableBytes());
+    retrieveAll();
+    return str;
+}
+
 void Buffer::append(const string &str)
 {
     append(str.data(), str.size());

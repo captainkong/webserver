@@ -19,5 +19,10 @@ int main(int argc, char const *argv[])
     buff.append(str);
     assert(buff.readableBytes() == str.size());
 
+    string tem = buff.retrieveAllToString();
+    cout << tem << endl;
+    assert(tem == str);
+    assert(buff.readableBytes() == 0);
+
     return 0;
 }

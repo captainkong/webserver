@@ -28,7 +28,7 @@ private:
     void makeWriteSize(size_t len);
 
 public:
-    explicit Buffer(int _capacity);
+    explicit Buffer(int _capacity = 1024);
     ~Buffer();
 
     // 缓冲区可读字节数
@@ -48,6 +48,8 @@ public:
     void retrieve(size_t len);
     // 重置缓冲区
     void retrieveAll();
+    // 将缓冲区的数据导出为string
+    string retrieveAllToString();
 
     // 向缓冲区追加写入字符串
     void append(const string &str);
