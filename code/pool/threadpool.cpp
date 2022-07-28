@@ -14,7 +14,7 @@ ThreadPool::ThreadPool(int threadCount) : isClose(false)
 
 void ThreadPool::initTask(ThreadPool *_pool)
 {
-    std::cout << "线程id:" << std::this_thread::get_id() << std::endl;
+    // std::cout << "线程id:" << std::this_thread::get_id() << std::endl;
     ThreadPool *pool = _pool;
     std::unique_lock<std::mutex> locker(pool->mut_);
     while (true)
@@ -39,7 +39,7 @@ void ThreadPool::initTask(ThreadPool *_pool)
             pool->cond_.wait(locker);
         }
     }
-    std::cout << "线程id:" << std::this_thread::get_id() << "结束" << std::endl;
+    // std::cout << "线程id:" << std::this_thread::get_id() << "结束" << std::endl;
 }
 
 void ThreadPool::addTask(job &&task)

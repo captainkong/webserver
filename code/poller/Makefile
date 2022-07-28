@@ -6,8 +6,8 @@ PROGS =	test
 
 all:	${PROGS}
 
-test: test.cpp epoller.o
-		${CC} ${CFLAGS} -o $@ $^ ${LIBS}
+test: test.cpp epoller.o 
+		${CC} ${CFLAGS} -o $@ $^ ../buffer/buffer.o ../pool/threadpool.o ${LIBS}
 
 epoller.o: epoller.cpp
 		${CC} ${CFLAGS} -c -o $@ $^ ${LIBS}
