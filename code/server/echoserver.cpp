@@ -35,7 +35,7 @@ EchoServer::~EchoServer()
 
 void EchoServer::start()
 {
-    // 时间循环
+    // 事件循环
     while (!isClose_)
     {
         int ready = epoll_.wait();
