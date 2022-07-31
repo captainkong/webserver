@@ -5,6 +5,15 @@ using std::endl;
 
 WebServer::WebServer(int thread_size, int port_number, int max_user_count) : epoll_(max_user_count), pool_(thread_size), isClose_(false)
 {
+    // 指定网站的根目录
+    char *path = getcwd(nullptr, 256);
+    assert(path);
+    strncat(path, "/www/", 6);
+    HttpConnect::wwwRoot = path;
+
+    listenEvent_ = EPOLLRDHUP;
+    connEvent_ = EPOLLONESHOT | EPOLLRDHUP;
+
     int ret;
     struct sockaddr_in addr;
 
@@ -71,7 +80,22 @@ void WebServer::dealClientRead(int cfd)
         return;
     }
     // 开始处理请求
-    client->praseRequest();
+    if (!client->praseRequest())
+    {
+        cout << "解析失败!" << endl;
+        return;
+    }
+    epoll_.modFd(cfd, connEvent_ | EPOLLOUT);
+}
+
+void WebServer::dealClientWrite(int cfd)
+{
+    HttpConnect *client = users_[cfd];
+    assert(client);
+    int err = 0;
+    size_t len = client->sendToClient(&err);
+    cout << "webServer:len" << len << ",err:" << err << endl;
+    epoll_.modFd(cfd, connEvent_ | EPOLLIN);
 }
 
 void WebServer::start()
@@ -82,16 +106,24 @@ void WebServer::start()
         int ready = epoll_.wait();
         for (int i = 0; i < ready; ++i)
         {
-            if (epoll_.getFd(i) == listenFd_ && epoll_.getEvent(i) & EPOLLIN)
+            u_int32_t events = epoll_.getEvent(i);
+            int fd = epoll_.getFd(i);
+
+            if (fd == listenFd_)
             {
                 // 新的连接到来  任务交给线程池处理
                 pool_.addTask(std::bind(&WebServer::acceptNewClient, this));
             }
-            else if (epoll_.getFd(i) != listenFd_ && epoll_.getEvent(i) & EPOLLIN)
+            else if (events & EPOLLIN)
             {
-                cout << "启动新的io线程" << endl;
+                cout << "启动新的io线程,准备读客户端" << endl;
                 // 处理客户端消息 任务交给线程池处理
                 pool_.addTask(std::bind(&WebServer::dealClientRead, this, epoll_.getFd(i)));
+            }
+            else if (events & EPOLLOUT)
+            {
+                cout << "启动新的io线程,准备写客户端" << endl;
+                pool_.addTask(std::bind(&WebServer::dealClientWrite, this, epoll_.getFd(i)));
             }
         }
     }

@@ -2,7 +2,9 @@
 #define HTTP_CONNECT_H
 #include "../buffer/buffer.h"
 #include "httprequest.h"
+#include "httpresponse.h"
 #include <arpa/inet.h>
+#include <sys/types.h>
 
 /**
  * HttpConnect 对应到echoServer的结构体client_t
@@ -12,18 +14,18 @@
  *
  */
 
-class httpResponse;
-
 class HttpConnect
 {
 private:
     int port_;
     char ip_[16];
     int fd_;
+    struct iovec iov_[2];
+    size_t iovCnt_;
     Buffer readBuffer_;
     Buffer writeBuffer_;
     HttpRequest request_;
-    HttpRequest response_;
+    HttpResponse response_;
 
 public:
     HttpConnect(int cfd, struct sockaddr_in &clientAddr);
@@ -33,8 +35,9 @@ public:
     int getFd() const;
     const char *getIP() const;
     int getPort() const;
-
     bool praseRequest();
+
+    static const char *wwwRoot;
 };
 
 #endif // HTTP_CONNECT_H

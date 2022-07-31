@@ -21,6 +21,7 @@ bool HttpRequest::prase(Buffer &read_buff)
         // 首先从缓冲区中拿到该解析的数据
         const char *lineEnd = std::search(read_buff.beginRead(), read_buff.beginWriteConst(), CRLF, CRLF + 2);
         string line(read_buff.beginRead(), lineEnd);
+
         // 读指针后移
         read_buff.retrieve(line.size() + 2);
         switch (state_)
@@ -28,10 +29,17 @@ bool HttpRequest::prase(Buffer &read_buff)
         case REQUEST:
             if (!praseRequest(line))
                 return false;
+            prasePath();
             break;
         case HEADER:
-            if (!praseHeader(line))
-                return false;
+            if (line.size() == 0)
+            {
+                state_ = BODY;
+                break;
+            }
+            praseHeader(line);
+            if (read_buff.readableBytes() <= 2)
+                state_ = FINISH;
             break;
         case BODY:
             if (!praseBody(line))
@@ -41,6 +49,8 @@ bool HttpRequest::prase(Buffer &read_buff)
             break;
         }
     }
+    assert(state_ == FINISH);
+    cout << "解析成功!" << endl;
     return true;
 }
 
@@ -57,14 +67,35 @@ bool HttpRequest::praseRequest(const string &line)
         version_ = match[3];
         state_ = HEADER;
         cout << "method=" << method_ << ", path_=" << path_ << ", version=" << version_ << endl;
-        return false;
+        return true;
     }
     return false;
 }
 
-bool HttpRequest::praseHeader(const string &line)
+bool HttpRequest::prasePath()
 {
-    return false;
+    if (path_ == "/")
+    {
+        path_ = "/index.html";
+    }
+    cout << "HttpRequest::prasePath:" << path_ << endl;
+    return true;
+}
+
+void HttpRequest::praseHeader(const string &line)
+{
+    // Header的格式 key:_value
+    std::regex pattern("^([^:]*): ?(.*)$");
+    std::smatch match;
+    if (std::regex_match(line, match, pattern))
+    {
+        headers_[match[1]] = match[2];
+        cout << match[1] << ":" << match[2] << endl;
+    }
+    else
+    {
+        cout << "解析失败!" << endl;
+    }
 }
 
 bool HttpRequest::praseBody(const string &line)
@@ -84,6 +115,7 @@ HttpRequest::REQUEST_TYPE HttpRequest::getRequestType() const
 
 string HttpRequest::getPath() const
 {
+    cout << "HttpRequest::getPath() " << path_ << endl;
     return path_;
 }
 
@@ -94,15 +126,30 @@ string HttpRequest::getVersion() const
 
 string HttpRequest::getHeader(const string &key) const
 {
+    auto it = headers_.find(key);
+    if (it != headers_.end())
+    {
+        return it->second;
+    }
     return "";
 }
 
 string HttpRequest::getGet(const string &key) const
 {
+    auto it = get_.find(key);
+    if (it != get_.end())
+    {
+        return it->second;
+    }
     return "";
 }
 
 string HttpRequest::getPost(const string &key) const
 {
+    auto it = post_.find(key);
+    if (it != post_.end())
+    {
+        return it->second;
+    }
     return "";
 }

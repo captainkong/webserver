@@ -36,10 +36,15 @@ private:
     std::unordered_map<int, HttpConnect *> users_;
     int listenFd_;
 
+    uint32_t listenEvent_;
+    uint32_t connEvent_;
+
     // lfd epollin 触发
     void acceptNewClient();
     // cfd epollin 触发
     void dealClientRead(int cfd);
+    // cfd epollout 触发
+    void dealClientWrite(int cfd);
 
     // 关闭客户端连接
     void closeConnect(HttpConnect *con);

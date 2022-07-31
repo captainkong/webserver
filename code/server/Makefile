@@ -9,7 +9,7 @@ all:	${PROGS}
 server: test.cpp echoserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o
 		${CC} ${CFLAGS} -o $@ $^  ${LIBS}
 
-webserver: server.cpp webserver.o ../http/httpconnect.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o ../http/httprequest.o ../http/httpresponse.o
+webserver: server.cpp webserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o ../http/httprequest.o ../http/httpresponse.o ../http/httpconnect.o 
 		${CC} ${CFLAGS} -o $@ $^  ${LIBS}
 
 echoserver.o: echoserver.cpp

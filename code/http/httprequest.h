@@ -62,8 +62,10 @@ private:
 
     // 解析请求行
     bool praseRequest(const string &line);
+    // 根据解析请求行拿到的path_数据解析资源路径
+    bool prasePath();
     // 解析请求头
-    bool praseHeader(const string &line);
+    void praseHeader(const string &line);
     // 解析请求体
     bool praseBody(const string &line);
     // 解析get/post的传参
