@@ -8,7 +8,7 @@ WebServer::WebServer(int thread_size, int port_number, int max_user_count) : epo
     // 指定网站的根目录
     char *path = getcwd(nullptr, 256);
     assert(path);
-    strncat(path, "/www/", 6);
+    strncat(path, "/www", 5);
     HttpConnect::wwwRoot = path;
 
     listenEvent_ = EPOLLRDHUP;
@@ -69,6 +69,8 @@ void WebServer::acceptNewClient()
 
 void WebServer::dealClientRead(int cfd)
 {
+    // timeval startTime, endTime;
+    // gettimeofday(&startTime, NULL);
     HttpConnect *client = users_[cfd];
     assert(client);
     int err = 0;
@@ -79,12 +81,19 @@ void WebServer::dealClientRead(int cfd)
         closeConnect(client);
         return;
     }
+    // gettimeofday(&endTime, NULL);
+    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第一阶段用时:" << timeUsed << "us" << endl;
+    // gettimeofday(&startTime, NULL);
     // 开始处理请求
     if (!client->praseRequest())
     {
         cout << "解析失败!" << endl;
         return;
     }
+    // gettimeofday(&endTime, NULL);
+    // timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第2阶段用时:" << timeUsed << "us" << endl;
     epoll_.modFd(cfd, connEvent_ | EPOLLOUT);
 }
 

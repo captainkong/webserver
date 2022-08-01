@@ -34,6 +34,9 @@ private:
     void makeHeader();
     void makeBody();
 
+    // 实现无拓展名访问网页
+    void prasePath();
+
     // 根据拓展名判断文件的类型
     string getFileType() const;
     // 释放 mmap

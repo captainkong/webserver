@@ -2,6 +2,7 @@
 
 using std::cout;
 using std::endl;
+#include <sys/time.h>
 
 HttpRequest::HttpRequest() : state_(REQUEST), requestType_(OTHERS)
 {
@@ -13,6 +14,16 @@ HttpRequest::~HttpRequest()
 
 bool HttpRequest::prase(Buffer &read_buff)
 {
+    // timeval startTime, endTime;
+    // gettimeofday(&startTime, NULL);
+    // 清空已有数据
+    // method_ = path_ = version_ = "";
+    // state_ = REQUEST;
+    // headers_.clear();
+    // post_.clear();
+    // get_.clear();
+    state_ = REQUEST;
+
     const char CRLF[] = "\r\n";
     if (read_buff.readableBytes() == 0)
         return false;
@@ -29,7 +40,6 @@ bool HttpRequest::prase(Buffer &read_buff)
         case REQUEST:
             if (!praseRequest(line))
                 return false;
-            prasePath();
             break;
         case HEADER:
             if (line.size() == 0)
@@ -49,8 +59,14 @@ bool HttpRequest::prase(Buffer &read_buff)
             break;
         }
     }
+    read_buff.retrieveAll();
     assert(state_ == FINISH);
-    cout << "解析成功!" << endl;
+    // cout << "解析成功!" << endl;
+
+    // gettimeofday(&endTime, NULL);
+    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第1阶段用时:" << timeUsed << "us" << endl;
+
     return true;
 }
 
@@ -58,6 +74,9 @@ bool HttpRequest::praseRequest(const string &line)
 {
     // 请求行的格式:  方法 资源路径 协议/版本
     // 使用正则表达式拿到请求参数
+    // timeval startTime, endTime;
+    // gettimeofday(&startTime, NULL);
+
     std::regex pattern("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
     std::smatch match;
     if (std::regex_match(line, match, pattern))
@@ -67,35 +86,36 @@ bool HttpRequest::praseRequest(const string &line)
         version_ = match[3];
         state_ = HEADER;
         cout << "method=" << method_ << ", path_=" << path_ << ", version=" << version_ << endl;
+
+        // gettimeofday(&endTime, NULL);
+        // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+        // cout << "praseRequest用时:" << timeUsed << "us" << endl;
+
         return true;
     }
     return false;
 }
 
-bool HttpRequest::prasePath()
-{
-    if (path_ == "/")
-    {
-        path_ = "/index.html";
-    }
-    cout << "HttpRequest::prasePath:" << path_ << endl;
-    return true;
-}
-
 void HttpRequest::praseHeader(const string &line)
 {
+    // timeval startTime, endTime;
+    // gettimeofday(&startTime, NULL);
     // Header的格式 key:_value
     std::regex pattern("^([^:]*): ?(.*)$");
     std::smatch match;
     if (std::regex_match(line, match, pattern))
     {
         headers_[match[1]] = match[2];
-        cout << match[1] << ":" << match[2] << endl;
+        // cout << match[1] << ":" << match[2] << endl;
     }
     else
     {
         cout << "解析失败!" << endl;
     }
+
+    // gettimeofday(&endTime, NULL);
+    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "praseHeader用时:" << timeUsed << "us" << endl;
 }
 
 bool HttpRequest::praseBody(const string &line)
@@ -115,7 +135,6 @@ HttpRequest::REQUEST_TYPE HttpRequest::getRequestType() const
 
 string HttpRequest::getPath() const
 {
-    cout << "HttpRequest::getPath() " << path_ << endl;
     return path_;
 }
 

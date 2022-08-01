@@ -51,12 +51,14 @@ HttpResponse::~HttpResponse()
 
 void HttpResponse::response(Buffer *buff, string &path, bool isKeepAlive, int code)
 {
-    cout << "HttpResponse::response  path:" << path << ",code:" << code << endl;
+    // cout << "HttpResponse::response  path:" << path << ",code:" << code << endl;
     pBuff_ = buff;
     path_ = path;
     isKeepAlive_ = isKeepAlive;
     statusCode_ = code;
-    string absDir = rootDir_ + path;
+    prasePath();
+
+    string absDir = rootDir_ + path_;
     cout << "absDir=" << absDir << endl;
     if (statusCode_ == 200)
     {
@@ -93,14 +95,25 @@ void HttpResponse::response(Buffer *buff, string &path, bool isKeepAlive, int co
         {
             statusCode_ = 400;
         }
-        string errorPage = CODE_STATUS.find(statusCode_)->second;
-        int ret = stat(errorPage.data(), &fileStat_);
+        string errorPage = CODE_PATH.find(statusCode_)->second;
+        string absPath = rootDir_ + errorPage;
+        cout << "absPath:" << absPath << endl;
+        int ret = stat(absPath.data(), &fileStat_);
         assert(ret == 0);
     }
 
     makeStatusLine();
     makeHeader();
     makeBody();
+}
+
+void HttpResponse::prasePath()
+{
+    if (path_ == "/")
+    {
+        path_ = "/index.html";
+    }
+    // cout << "HttpRequest::prasePath:" << path_ << endl;
 }
 
 void HttpResponse::makeStatusLine()
@@ -154,7 +167,7 @@ void HttpResponse::makeBody()
 
 string HttpResponse::getFileType() const
 {
-    static string defaultSuffix = "text/plain";
+    static string defaultSuffix = "text/html";
     size_t index = path_.find_last_of('.');
     if (index == std::string::npos)
     {

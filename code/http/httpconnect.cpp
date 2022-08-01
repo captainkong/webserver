@@ -2,6 +2,7 @@
 
 using std::cout;
 using std::endl;
+#include <sys/time.h>
 
 const char *HttpConnect::wwwRoot;
 
@@ -73,10 +74,19 @@ size_t HttpConnect::sendToClient(int *err)
 
 bool HttpConnect::praseRequest()
 {
+    // timeval startTime, endTime;
+    // gettimeofday(&startTime, NULL);
+
     assert(readBuffer_.readableBytes() > 0);
     bool ret = request_.prase(readBuffer_);
     string path = request_.getPath();
-    cout << "HttpConnect::praseRequest path=" << path << endl;
+
+    // gettimeofday(&endTime, NULL);
+    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第1阶段用时:" << timeUsed << "us" << endl;
+    // gettimeofday(&startTime, NULL);
+
+    // cout << "HttpConnect::praseRequest path=" << path << endl;
     if (ret)
     {
         response_.response(&writeBuffer_, path, true, 200);
@@ -85,6 +95,11 @@ bool HttpConnect::praseRequest()
     {
         response_.response(&writeBuffer_, path, true, 400);
     }
+
+    // gettimeofday(&endTime, NULL);
+    // timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第2阶段用时:" << timeUsed << "us" << endl;
+    // gettimeofday(&startTime, NULL);
 
     iov_[0].iov_base = const_cast<char *>(writeBuffer_.beginRead());
     iov_[0].iov_len = writeBuffer_.readableBytes();
@@ -96,6 +111,10 @@ bool HttpConnect::praseRequest()
         iov_[1].iov_len = response_.fileSize();
         iovCnt_ = 2;
     }
+
+    // gettimeofday(&endTime, NULL);
+    // timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+    // cout << "第3阶段用时:" << timeUsed << "us" << endl;
     return true;
 }
 

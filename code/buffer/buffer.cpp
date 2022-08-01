@@ -13,8 +13,13 @@ void Buffer::ensureWriteableSize(size_t len)
 void Buffer::makeWriteSize(size_t len)
 {
     size_t remain = preBytes() + writeableBytes();
+
     // 整体前移, 让出空闲空间
+    size_t dataLen = readableBytes();
     std::copy(buffer_.begin() + readIndex_, buffer_.begin() + writeIndex_, buffer_.begin());
+    readIndex_ = 0;
+    writeIndex_ = dataLen;
+
     if (remain < len)
     {
         int need = len - remain;
