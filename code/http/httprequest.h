@@ -67,7 +67,7 @@ private:
     // 解析请求体
     bool praseBody(const string &line);
     // 解析get/post的传参
-    bool praseArg(const string &line);
+    bool praseArg(const string &line, bool isGet);
 };
 
 #endif // HTTP_REQUEST_H

@@ -86,7 +86,14 @@ bool HttpRequest::praseRequest(const string &line)
         version_ = match[3];
         state_ = HEADER;
         cout << "method=" << method_ << ", path_=" << path_ << ", version=" << version_ << endl;
-
+        size_t inx = path_.find_first_of('?');
+        if (inx != string::npos)
+        {
+            cout << "inx=" << inx << endl;
+            praseArg(path_.substr(inx + 1), true);
+            path_ = path_.substr(0, inx);
+            cout << "new path=" << path_ << endl;
+        }
         // gettimeofday(&endTime, NULL);
         // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
         // cout << "praseRequest用时:" << timeUsed << "us" << endl;
@@ -123,8 +130,47 @@ bool HttpRequest::praseBody(const string &line)
     return false;
 }
 
-bool HttpRequest::praseArg(const string &line)
+bool HttpRequest::praseArg(const string &line, bool isGet)
 {
+    cout << "line:" << line << endl;
+    // name=kang&age=25
+    int n = line.size();
+    string key, value;
+    int sta = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        if (line[i] == '=')
+        {
+            sta = 1;
+        }
+        else if (line[i] == '&' || i == n - 1)
+        {
+            if (i == n - 1)
+            {
+                value += line[i];
+            }
+            cout << "key=" << key << ",value=" << value << endl;
+            key = "";
+            value = "";
+            sta = 0;
+            if (i == n - 1)
+            {
+                return true;
+            }
+        }
+        else
+        {
+            if (sta == 0)
+            {
+                key += line[i];
+            }
+            else
+            {
+                value += line[i];
+            }
+        }
+    }
+
     return false;
 }
 
