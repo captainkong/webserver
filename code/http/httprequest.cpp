@@ -33,8 +33,10 @@ bool HttpRequest::prase(Buffer &read_buff)
         const char *lineEnd = std::search(read_buff.beginRead(), read_buff.beginWriteConst(), CRLF, CRLF + 2);
         string line(read_buff.beginRead(), lineEnd);
 
+        cout << "line:" << line << ", n=" << line.size() << ", readableBytes=" << read_buff.readableBytes() << endl;
+
         // 读指针后移
-        read_buff.retrieve(line.size() + 2);
+        read_buff.retrieve(line.size() + (state_ == BODY ? 0 : 2));
         switch (state_)
         {
         case REQUEST:
@@ -52,8 +54,8 @@ bool HttpRequest::prase(Buffer &read_buff)
                 state_ = FINISH;
             break;
         case BODY:
-            if (!praseBody(line))
-                return false;
+            praseBody(line);
+            state_ = FINISH;
             break;
         default:
             break;
@@ -89,7 +91,6 @@ bool HttpRequest::praseRequest(const string &line)
         size_t inx = path_.find_first_of('?');
         if (inx != string::npos)
         {
-            cout << "inx=" << inx << endl;
             praseArg(path_.substr(inx + 1), true);
             path_ = path_.substr(0, inx);
             cout << "new path=" << path_ << endl;
@@ -113,11 +114,12 @@ void HttpRequest::praseHeader(const string &line)
     if (std::regex_match(line, match, pattern))
     {
         headers_[match[1]] = match[2];
-        // cout << match[1] << ":" << match[2] << endl;
+        cout << match[1] << ":" << match[2] << endl;
     }
     else
     {
         cout << "解析失败!" << endl;
+        state_ = BODY;
     }
 
     // gettimeofday(&endTime, NULL);
@@ -127,6 +129,8 @@ void HttpRequest::praseHeader(const string &line)
 
 bool HttpRequest::praseBody(const string &line)
 {
+    cout << "HttpRequest::praseBody:" << line << endl;
+    praseArg(line, false);
     return false;
 }
 
@@ -150,6 +154,14 @@ bool HttpRequest::praseArg(const string &line, bool isGet)
                 value += line[i];
             }
             cout << "key=" << key << ",value=" << value << endl;
+            if (isGet)
+            {
+                get_[key] = value;
+            }
+            else
+            {
+                post_[key] = value;
+            }
             key = "";
             value = "";
             sta = 0;
