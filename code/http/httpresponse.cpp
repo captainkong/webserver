@@ -23,8 +23,8 @@ const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
     {".avi", "video/x-msvideo"},
     {".gz", "application/x-gzip"},
     {".tar", "application/x-tar"},
-    {".css", "text/css "},
-    {".js", "text/javascript "},
+    {".css", "text/css"},
+    {".js", "text/javascript"},
 };
 
 const unordered_map<int, string> HttpResponse::CODE_STATUS = {
@@ -49,13 +49,20 @@ HttpResponse::~HttpResponse()
     unmapFile();
 }
 
-void HttpResponse::response(Buffer *buff, string &path, bool isKeepAlive, int code)
+void HttpResponse::response(HttpRequest *request, Buffer *buff, string &path, bool isKeepAlive, int code)
 {
-    // cout << "HttpResponse::response  path:" << path << ",code:" << code << endl;
+    cout << "HttpResponse::response  path:" << path << ",code:" << code << endl;
     pBuff_ = buff;
     path_ = path;
     isKeepAlive_ = isKeepAlive;
     statusCode_ = code;
+    httpRequest_ = request;
+
+    if (path == "/api")
+    {
+        responseAPI();
+        return;
+    }
     prasePath();
 
     string absDir = rootDir_ + path_;
@@ -105,6 +112,24 @@ void HttpResponse::response(Buffer *buff, string &path, bool isKeepAlive, int co
     makeStatusLine();
     makeHeader();
     makeBody();
+}
+
+void HttpResponse::responseAPI()
+{
+    cout << "HttpResponse::responseAPI()";
+    string reqType = httpRequest_->getArg("type");
+    // cout << "reqType=" << reqType << endl;
+    if (reqType == "ajaxVerifyRegName")
+    {
+        string name = httpRequest_->getArg("name");
+        cout << "name=" << name << endl;
+        // cout << "可写长度:" << pBuff_->readableBytes() << endl;
+        makeStatusLine();
+        makeHeader();
+        string res = "verifyOk";
+        pBuff_->append("Content-Length: " + std::to_string(res.size()) + "\r\n\r\n" + res);
+        // cout << "可写长度:" << pBuff_->readableBytes() << endl;
+    }
 }
 
 void HttpResponse::prasePath()
@@ -167,6 +192,8 @@ void HttpResponse::makeBody()
 
 string HttpResponse::getFileType() const
 {
+    if (path_ == "/api")
+        return "text/plain";
     static string defaultSuffix = "text/html";
     size_t index = path_.find_last_of('.');
     if (index == std::string::npos)

@@ -33,7 +33,7 @@ bool HttpRequest::prase(Buffer &read_buff)
         const char *lineEnd = std::search(read_buff.beginRead(), read_buff.beginWriteConst(), CRLF, CRLF + 2);
         string line(read_buff.beginRead(), lineEnd);
 
-        cout << "line:" << line << ", n=" << line.size() << ", readableBytes=" << read_buff.readableBytes() << endl;
+        // cout << "line:" << line << ", n=" << line.size() << ", readableBytes=" << read_buff.readableBytes() << endl;
 
         // 读指针后移
         read_buff.retrieve(line.size() + (state_ == BODY ? 0 : 2));
@@ -114,7 +114,7 @@ void HttpRequest::praseHeader(const string &line)
     if (std::regex_match(line, match, pattern))
     {
         headers_[match[1]] = match[2];
-        cout << match[1] << ":" << match[2] << endl;
+        // cout << match[1] << ":" << match[2] << endl;
     }
     else
     {
@@ -188,7 +188,16 @@ bool HttpRequest::praseArg(const string &line, bool isGet)
 
 HttpRequest::REQUEST_TYPE HttpRequest::getRequestType() const
 {
-    return GET;
+    if (method_ == "GET")
+    {
+        return GET;
+    }
+    else if (method_ == "POST")
+    {
+        return POST;
+    }
+
+    return OTHERS;
 }
 
 string HttpRequest::getPath() const
@@ -229,4 +238,29 @@ string HttpRequest::getPost(const string &key) const
         return it->second;
     }
     return "";
+}
+
+string HttpRequest::getArg(const string &key) const
+{
+    auto met = getRequestType();
+    if (OTHERS == met)
+        return "";
+    if (GET == met)
+    {
+        return getGet(key);
+    }
+    else
+    {
+        return getPost(key);
+    }
+}
+
+bool HttpRequest::getIsKeepAlive() const
+{
+    auto it = headers_.find("Connection");
+    if (it != headers_.end())
+    {
+        return it->second == "keep-alive";
+    }
+    return false;
 }

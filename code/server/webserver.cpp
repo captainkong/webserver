@@ -69,8 +69,6 @@ void WebServer::acceptNewClient()
 
 void WebServer::dealClientRead(int cfd)
 {
-    // timeval startTime, endTime;
-    // gettimeofday(&startTime, NULL);
     HttpConnect *client = users_[cfd];
     assert(client);
     int err = 0;
@@ -81,20 +79,21 @@ void WebServer::dealClientRead(int cfd)
         closeConnect(client);
         return;
     }
-    // gettimeofday(&endTime, NULL);
-    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
-    // cout << "第一阶段用时:" << timeUsed << "us" << endl;
-    // gettimeofday(&startTime, NULL);
+
     // 开始处理请求
-    if (!client->praseRequest())
+    onProcess(client);
+}
+
+void WebServer::onProcess(HttpConnect *client)
+{
+    if (client->praseRequest())
     {
-        cout << "解析失败!" << endl;
-        return;
+        epoll_.modFd(client->getFd(), connEvent_ | EPOLLOUT);
     }
-    // gettimeofday(&endTime, NULL);
-    // timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
-    // cout << "第2阶段用时:" << timeUsed << "us" << endl;
-    epoll_.modFd(cfd, connEvent_ | EPOLLOUT);
+    else
+    {
+        epoll_.modFd(client->getFd(), connEvent_ | EPOLLIN);
+    }
 }
 
 void WebServer::dealClientWrite(int cfd)
@@ -103,8 +102,28 @@ void WebServer::dealClientWrite(int cfd)
     assert(client);
     int err = 0;
     size_t len = client->sendToClient(&err);
-    cout << "webServer:len" << len << ",err:" << err << endl;
-    epoll_.modFd(cfd, connEvent_ | EPOLLIN);
+    cout << "webServer:len" << len << ",err:" << err << ",WriteableBytes:" << client->getWriteableBytes() << endl;
+    if (client->getWriteableBytes() == 0)
+    {
+        if (client->isKeepAlive())
+        {
+            onProcess(client);
+            return;
+        }
+        else
+        {
+            cout << "not keepAlive()" << endl;
+        }
+    }
+    else if (len < 0)
+    {
+        if (err == EAGAIN)
+        {
+            epoll_.modFd(client->getFd(), connEvent_ | EPOLLOUT);
+            return;
+        }
+    }
+    closeConnect(client);
 }
 
 void WebServer::start()
@@ -142,10 +161,11 @@ void WebServer::closeConnect(HttpConnect *con)
 {
     int cfd = con->getFd();
     cout << "Closed: " << con->getIP() << ":" << con->getPort() << endl;
-    delete con;
     users_.erase(cfd);
     close(cfd);
     epoll_.delFd(cfd);
+    cout << "下树完毕" << endl;
+    delete con;
     // 可能不准(不一致)
     cout << " 剩余客户端:" << users_.size() << endl;
 }

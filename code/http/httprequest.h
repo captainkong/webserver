@@ -37,6 +37,10 @@ public:
     string getGet(const string &key) const;
     // 获取用户post传参
     string getPost(const string &key) const;
+    // 获取传参
+    string getArg(const string &key) const;
+    // 获取keepAlive
+    bool getIsKeepAlive() const;
 
 private:
     enum PRASE_STATE

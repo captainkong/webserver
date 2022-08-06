@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>register</title>
+</head>
+
+<script>
+    function showHint(str) {
+        if (str.length == 0) {
+            return;
+        }
+        if (window.XMLHttpRequest) {
+            // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行的代码
+            xmlhttp = new XMLHttpRequest();
+        }
+        else {
+            //IE6, IE5 浏览器执行的代码
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        xmlhttp.onreadystatechange = function () {
+            console.log("readyState:" + xmlhttp.readyState + ",status:" + xmlhttp.status);
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                alert("Server:\n" + xmlhttp.responseText);
+            }
+        }
+        xmlhttp.open("GET", "api?type=ajaxVerifyRegName&name=" + str, true);
+        xmlhttp.send();
+    }
+</script>
+
+<body>
+    <br>
+    <br>
+    <form action="register.html" method="post">
+
+        <h1 align="center">register</h1>
+        <div align="center">
+            <input type="text" name="username" placeholder="user name" onblur="showHint(this.value)">
+        </div>
+
+        <!-- <div align="center" width="100px">
+            <span id="regStatus">sta</span>
+        </div> -->
+        <br />
+        <div align="center"><input type="password" name="password" placeholder="password"></div>
+        <br />
+        <div align="center"><button type="submit">ok</button></div>
+    </form>
+</body>
+
+</html>

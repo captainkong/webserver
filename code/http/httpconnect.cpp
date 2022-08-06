@@ -38,7 +38,7 @@ size_t HttpConnect::sendToClient(int *err)
     while (true)
     {
         len = writev(fd_, iov_, iovCnt_);
-        cout << "len:" << len << ",err=" << errno << endl;
+        cout << "iovCnt=" << iovCnt_ << ",len:" << len << ",err=" << errno << endl;
         if (len <= 0)
         {
             *err = errno;
@@ -59,12 +59,19 @@ size_t HttpConnect::sendToClient(int *err)
                 if (len == iov_[0].iov_len + iov_[1].iov_len)
                 {
                     // 读干净,可以退出
+                    cout << "已经写完!" << endl;
+                    iov_[0].iov_len = 0;
+                    iov_[1].iov_len = 0;
                     break;
                 }
                 size_t spend = len - iov_[0].iov_len;
                 iov_[1].iov_base = (uint8_t *)iov_[1].iov_base + spend;
                 iov_[1].iov_len -= spend;
-                iov_[0].iov_len = 0;
+                        }
+            else
+            {
+                iov_[0].iov_base = const_cast<char *>(writeBuffer_.beginRead());
+                iov_[0].iov_len = writeBuffer_.readableBytes();
             }
         }
     }
@@ -72,12 +79,19 @@ size_t HttpConnect::sendToClient(int *err)
     return 0;
 }
 
+size_t HttpConnect::getWriteableBytes() const
+{
+    cout << "iov_[0].iov_len:=" << iov_[0].iov_len << ",iov_[1].iov_len =" << iov_[1].iov_len << ",cnt=" << iovCnt_ << endl;
+    return iov_[0].iov_len + (iovCnt_ == 2 ? iov_[1].iov_len : 0);
+}
+
 bool HttpConnect::praseRequest()
 {
     // timeval startTime, endTime;
     // gettimeofday(&startTime, NULL);
+    if (readBuffer_.readableBytes() <= 0)
+        return false;
 
-    assert(readBuffer_.readableBytes() > 0);
     bool ret = request_.prase(readBuffer_);
     string path = request_.getPath();
 
@@ -89,11 +103,11 @@ bool HttpConnect::praseRequest()
     // cout << "HttpConnect::praseRequest path=" << path << endl;
     if (ret)
     {
-        response_.response(&writeBuffer_, path, true, 200);
+        response_.response(&request_, &writeBuffer_, path, true, 200);
     }
     else
     {
-        response_.response(&writeBuffer_, path, true, 400);
+        response_.response(&request_, &writeBuffer_, path, true, 400);
     }
 
     // gettimeofday(&endTime, NULL);
@@ -104,6 +118,12 @@ bool HttpConnect::praseRequest()
     iov_[0].iov_base = const_cast<char *>(writeBuffer_.beginRead());
     iov_[0].iov_len = writeBuffer_.readableBytes();
     iovCnt_ = 1;
+
+    if (path == "/api")
+    {
+        cout << "connect: return" << endl;
+        return true;
+    }
 
     if (response_.file() != nullptr && response_.fileSize() > 0)
     {
@@ -131,4 +151,9 @@ const char *HttpConnect::getIP() const
 int HttpConnect::getPort() const
 {
     return port_;
+}
+
+bool HttpConnect::isKeepAlive() const
+{
+    return request_.getIsKeepAlive();
 }

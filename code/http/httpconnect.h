@@ -32,10 +32,12 @@ public:
     ~HttpConnect();
     size_t readFromClient(int *err);
     size_t sendToClient(int *err);
+    size_t getWriteableBytes() const;
     int getFd() const;
     const char *getIP() const;
     int getPort() const;
     bool praseRequest();
+    bool isKeepAlive() const;
 
     static const char *wwwRoot;
 };

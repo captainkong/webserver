@@ -2,6 +2,7 @@
 #define HTTP_RESPONSE_H
 
 #include "../buffer/buffer.h"
+#include "httprequest.h"
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
@@ -22,6 +23,7 @@ private:
     static const std::unordered_map<int, std::string> CODE_PATH;
     string rootDir_;
     Buffer *pBuff_;
+    HttpRequest *httpRequest_;
 
     string path_;
     int statusCode_;
@@ -46,7 +48,9 @@ public:
     HttpResponse(string path);
     ~HttpResponse();
     // 对资源请求进行相应
-    void response(Buffer *buff, string &path, bool isKeepAlive, int code);
+    void response(HttpRequest *request, Buffer *buff, string &path, bool isKeepAlive, int code);
+    // 对api调用进行响应
+    void responseAPI();
     //  获取文件资源共享内存的地址
     char *file() const;
     // 获取文件资源的长度

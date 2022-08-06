@@ -43,6 +43,7 @@ private:
     void acceptNewClient();
     // cfd epollin 触发
     void dealClientRead(int cfd);
+    void onProcess(HttpConnect *client);
     // cfd epollout 触发
     void dealClientWrite(int cfd);
 
