@@ -2,6 +2,7 @@
 #define HTTP_REQUEST_H
 
 #include "../buffer/buffer.h"
+#include "../pool/sqlconnpool.h"
 #include <algorithm>
 #include <string>
 #include <unordered_map>
@@ -41,6 +42,13 @@ public:
     string getArg(const string &key) const;
     // 获取keepAlive
     bool getIsKeepAlive() const;
+
+    // 注册新用户
+    bool regUser(const string &user_name, const string &password);
+    // 登录
+    bool login(const string &user_name, const string &password);
+    // 判断ID是否已存在
+    bool isExistsUser(const string &user_name);
 
 private:
     enum PRASE_STATE

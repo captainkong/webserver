@@ -5,7 +5,12 @@
     <title>register</title>
 </head>
 
+<script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.min.js"></script>
+
 <script>
+    function hideStatus() {
+        document.getElementById("regStatus").innerHTML = "";
+    }
     function showHint(str) {
         if (str.length == 0) {
             return;
@@ -19,31 +24,72 @@
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
         }
         xmlhttp.onreadystatechange = function () {
+            var status = document.getElementById("regStatus");
             console.log("readyState:" + xmlhttp.readyState + ",status:" + xmlhttp.status);
             if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                alert("Server:\n" + xmlhttp.responseText);
+                if (xmlhttp.responseText != "verifyOk") {
+                    status.innerHTML = "NAME EXISTS!";
+                } else {
+                    status.innerHTML = "";
+                }
             }
         }
         xmlhttp.open("GET", "api?type=ajaxVerifyRegName&name=" + str, true);
         xmlhttp.send();
     }
+
+    function check() {
+        let uname = document.getElementById('userName');
+        let psw = document.getElementById('input_password');
+        let md5psw = document.getElementById('md5_password');
+        console.log(uname.value);
+        console.log(psw.value);
+        md5psw.value = md5(psw.value, '456');
+        console.log(md5psw.value);
+        //可以校验内容，返回布尔值给表单的onsubmit属性提交信息，不通过就阻止提交
+        // return false;
+        return true;
+    }
 </script>
+
 
 <body>
     <br>
     <br>
-    <form action="register.html" method="post">
+    <form action="register" method="post" onsubmit="return check()">
 
         <h1 align="center">register</h1>
-        <div align="center">
-            <input type="text" name="username" placeholder="user name" onblur="showHint(this.value)">
-        </div>
+        <center>
+            <div style="width: 80%; display: inline-block;" align="center">
+                <div style="width: 70%;  float: left;">
+                    <input type="text" float="left" name="username" id="userName" placeholder="user name"
+                        onblur="showHint(this.value)" onkeypress="hideStatus()" style="float:right;width: 70%;">
+                </div>
+                <div style="width: 25%; float: left;margin-left: 5px;">
+                    <span id="regStatus" style="float:left;color: red;">
+                    </span>
+                </div>
 
-        <!-- <div align="center" width="100px">
-            <span id="regStatus">sta</span>
-        </div> -->
-        <br />
-        <div align="center"><input type="password" name="password" placeholder="password"></div>
+            </div>
+        </center>
+
+        <center>
+            <div style="width: 80%; display: inline-block;" align="center">
+                <div style="width: 70%;  float: left;">
+                    <input type="password" id="input_password" placeholder="password" style="float:right;width: 70%;">
+                </div>
+                <div style="width: 25%; float: left;margin-left: 5px;">
+
+                </div>
+
+            </div>
+        </center>
+
+
+
+
+        <!-- <div align="center"><input type="password" id="input_password" placeholder="password"></div> -->
+        <input type="hidden" name="password" id="md5_password">
         <br />
         <div align="center"><button type="submit">ok</button></div>
     </form>

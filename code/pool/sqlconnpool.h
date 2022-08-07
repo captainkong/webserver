@@ -38,7 +38,7 @@ public:
     int getFreeCount();
 
     // 销毁连接池
-    void destory();
+    void destroy();
 };
 
 // 封装一个RAII风格的sql对象管理类
@@ -56,4 +56,4 @@ public:
     ~SqlRAII();
 };
 
-#endif // SQLCONNPOLL_H
+#endif // SQLCONNPOOL_H

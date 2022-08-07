@@ -14,14 +14,7 @@ HttpRequest::~HttpRequest()
 
 bool HttpRequest::prase(Buffer &read_buff)
 {
-    // timeval startTime, endTime;
-    // gettimeofday(&startTime, NULL);
     // 清空已有数据
-    // method_ = path_ = version_ = "";
-    // state_ = REQUEST;
-    // headers_.clear();
-    // post_.clear();
-    // get_.clear();
     state_ = REQUEST;
 
     const char CRLF[] = "\r\n";
@@ -32,9 +25,6 @@ bool HttpRequest::prase(Buffer &read_buff)
         // 首先从缓冲区中拿到该解析的数据
         const char *lineEnd = std::search(read_buff.beginRead(), read_buff.beginWriteConst(), CRLF, CRLF + 2);
         string line(read_buff.beginRead(), lineEnd);
-
-        // cout << "line:" << line << ", n=" << line.size() << ", readableBytes=" << read_buff.readableBytes() << endl;
-
         // 读指针后移
         read_buff.retrieve(line.size() + (state_ == BODY ? 0 : 2));
         switch (state_)
@@ -64,10 +54,6 @@ bool HttpRequest::prase(Buffer &read_buff)
     read_buff.retrieveAll();
     assert(state_ == FINISH);
     // cout << "解析成功!" << endl;
-
-    // gettimeofday(&endTime, NULL);
-    // int timeUsed = 1000000 * (endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
-    // cout << "第1阶段用时:" << timeUsed << "us" << endl;
 
     return true;
 }
@@ -131,12 +117,29 @@ bool HttpRequest::praseBody(const string &line)
 {
     cout << "HttpRequest::praseBody:" << line << endl;
     praseArg(line, false);
+    // 使用post的几种可能 注册/登录/ajax请求
+    // 根据请求路径判断
+    if (path_ == "/register")
+    {
+        if (!regUser(post_["username"], post_["password"]))
+            path_ = "/error.html";
+        else
+            path_ = "/welcome.html";
+    }
+    else if (path_ == "/login")
+    {
+        if (!login(post_["username"], post_["password"]))
+            path_ = "/error.html";
+        else
+            path_ = "/welcome.html";
+    }
+
     return false;
 }
 
 bool HttpRequest::praseArg(const string &line, bool isGet)
 {
-    cout << "line:" << line << endl;
+    // cout << "line:" << line << endl;
     // name=kang&age=25
     int n = line.size();
     string key, value;
@@ -153,7 +156,7 @@ bool HttpRequest::praseArg(const string &line, bool isGet)
             {
                 value += line[i];
             }
-            cout << "key=" << key << ",value=" << value << endl;
+            // cout << "key=" << key << ",value=" << value << endl;
             if (isGet)
             {
                 get_[key] = value;
@@ -262,5 +265,73 @@ bool HttpRequest::getIsKeepAlive() const
     {
         return it->second == "keep-alive";
     }
+    return false;
+}
+
+bool HttpRequest::regUser(const string &user_name, const string &password)
+{
+    if (user_name.size() == 0 || password.size() == 0)
+        return false;
+
+    MYSQL *sql;
+    SqlRAII raii(&sql, SqlConnPool::getInstance());
+
+    char query[128];
+    snprintf(query, 128, "INSERT INTO `users` VALUES(NULL,\'%s\',\'%s\',now())", user_name.data(), password.data());
+    cout << query << endl;
+    if (mysql_real_query(sql, query, strlen(query)))
+    {
+        cout << "数据库写入失败!";
+        return false;
+    }
+    return true;
+}
+
+bool HttpRequest::login(const string &user_name, const string &password)
+{
+    if (user_name.size() == 0 || password.size() == 0)
+        return false;
+
+    MYSQL *sql;
+    SqlRAII raii(&sql, SqlConnPool::getInstance());
+
+    char query[128];
+    snprintf(query, 128, "SELECT `password` FROM `users` WHERE `name` = \'%s\' LIMIT 1", user_name.data());
+    cout << query << endl;
+
+    MYSQL_RES *res = nullptr;
+    bool ans = false;
+
+    do
+    {
+        if (mysql_real_query(sql, query, strlen(query)))
+        {
+            cout << "查询失败!";
+            break;
+        }
+        res = mysql_store_result(sql);
+        int n = mysql_num_fields(res);
+        int m = res->row_count;
+        if (m == 0)
+        {
+            cout << "无此用户" << endl;
+            break;
+        }
+        assert(m == 1 && n == 1);
+        MYSQL_ROW row = mysql_fetch_row(res);
+        string psw = row[0];
+        if (psw == password)
+            ans = true;
+
+    } while (false);
+
+    // 释放资源
+    mysql_free_result(res);
+    return ans;
+}
+
+bool HttpRequest::isExistsUser(const string &user_name)
+{
+    // 暂时不实现,放在response中实现
     return false;
 }

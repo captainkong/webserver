@@ -28,6 +28,7 @@ void ThreadPool::initTask(ThreadPool *_pool)
         {
             auto task = std::move(pool->task_queue_.front());
             pool->task_queue_.pop();
+            cout << "消费后任务队列长度:" << _pool->task_queue_.size() << endl;
 
             // 让出锁,让其它抢锁拿任务
             locker.unlock();
@@ -54,6 +55,7 @@ void ThreadPool::addTask(job &&task)
     {
         std::lock_guard<std::mutex> locker(mut_);
         task_queue_.emplace(std::move(task));
+        cout << "任务队列长度:" << task_queue_.size() << endl;
     }
     cond_.notify_one();
 }
@@ -74,4 +76,10 @@ void ThreadPool::shutdown()
         isClose = true;
     }
     cond_.notify_all();
+}
+
+size_t ThreadPool::getQueSize()
+{
+    std::lock_guard<std::mutex> locker(mut_);
+    return task_queue_.size();
 }

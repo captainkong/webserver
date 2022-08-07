@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>login</title>
+</head>
+
+<script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.min.js"></script>
+
+<script>
+    function check() {
+        let uname = document.getElementById('userName');
+        let psw = document.getElementById('input_password');
+        let md5psw = document.getElementById('md5_password');
+        console.log(uname.value);
+        console.log(psw.value);
+        md5psw.value = md5(psw.value, '456');
+        console.log(md5psw.value);
+        //可以校验内容，返回布尔值给表单的onsubmit属性提交信息，不通过就阻止提交
+        // return false;
+        return true;
+    }
+</script>
+
+
+<body>
+    <br>
+    <br>
+    <form action="login" method="post" onsubmit="return check()">
+
+        <h1 align="center">login</h1>
+        <div align="center">
+            <input type="text" name="username" id="userName" placeholder="user name">
+        </div>
+        <br />
+        <div align="center"><input type="password" id="input_password" placeholder="password"></div>
+        <input type="hidden" name="password" id="md5_password" <br />
+        <div align="center"><button type="submit">ok</button></div>
+    </form>
+</body>
+
+</html>

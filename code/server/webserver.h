@@ -11,6 +11,7 @@
  */
 
 #include "../pool/threadpool.h"
+#include "../pool/sqlconnpool.h"
 #include "../buffer/buffer.h"
 #include "../poller/epoller.h"
 #include "../http/httpconnect.h"

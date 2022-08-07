@@ -2,6 +2,7 @@
 #define HTTP_RESPONSE_H
 
 #include "../buffer/buffer.h"
+#include "../pool/sqlconnpool.h"
 #include "httprequest.h"
 #include <string>
 #include <unordered_set>

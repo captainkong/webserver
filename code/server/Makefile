@@ -9,8 +9,8 @@ all:	${PROGS}
 server: test.cpp echoserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o
 		${CC} ${CFLAGS} -o $@ $^  ${LIBS}
 
-webserver: server.cpp webserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o ../http/httprequest.o ../http/httpresponse.o ../http/httpconnect.o 
-		${CC} ${CFLAGS} -o $@ $^  ${LIBS}
+webserver: server.cpp webserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o ../pool/sqlconnpool.o ../http/httprequest.o ../http/httpresponse.o ../http/httpconnect.o 
+		${CC} ${CFLAGS} -o $@ $^  ${LIBS} -lmysqlclient
 
 echoserver.o: echoserver.cpp
 		${CC} ${CFLAGS} -c -o $@ $^ ${LIBS}
@@ -35,6 +35,9 @@ webserver.o: webserver.cpp
 
 ../pool/threadpool.o: ../pool/threadpool.cpp
 		${CC} ${CFLAGS} -c -o $@ $^ ${LIBS}
+
+../pool/sqlconnpool.o: ../pool/sqlconnpool.cpp
+		${CC} ${CFLAGS} -c -o $@ $^ ${LIBS} -lmysqlclient
 
 clean:
 		rm -f ${PROGS} *.o

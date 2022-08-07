@@ -30,6 +30,7 @@ public:
     ~ThreadPool();
     void addTask(job &&task);
     void shutdown();
+    size_t getQueSize();
 };
 
 #endif // THREADPOOL_H

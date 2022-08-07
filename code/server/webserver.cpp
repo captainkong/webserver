@@ -5,6 +5,9 @@ using std::endl;
 
 WebServer::WebServer(int thread_size, int port_number, int max_user_count) : epoll_(max_user_count), pool_(thread_size), isClose_(false)
 {
+    // 初始化数据库连接池
+    SqlConnPool *sqlPool = SqlConnPool::getInstance();
+    sqlPool->init("master", 3306, "root", "Test.2587", "webserver", 10);
     // 指定网站的根目录
     char *path = getcwd(nullptr, 256);
     assert(path);
@@ -102,7 +105,7 @@ void WebServer::dealClientWrite(int cfd)
     assert(client);
     int err = 0;
     size_t len = client->sendToClient(&err);
-    cout << "webServer:len" << len << ",err:" << err << ",WriteableBytes:" << client->getWriteableBytes() << endl;
+    // cout << "webServer:len" << len << ",err:" << err << ",WriteableBytes:" << client->getWriteableBytes() << endl;
     if (client->getWriteableBytes() == 0)
     {
         if (client->isKeepAlive())
@@ -136,7 +139,8 @@ void WebServer::start()
         {
             u_int32_t events = epoll_.getEvent(i);
             int fd = epoll_.getFd(i);
-
+            size_t q_size = pool_.getQueSize();
+            assert(q_size < 3);
             if (fd == listenFd_)
             {
                 // 新的连接到来  任务交给线程池处理
@@ -164,8 +168,9 @@ void WebServer::closeConnect(HttpConnect *con)
     users_.erase(cfd);
     close(cfd);
     epoll_.delFd(cfd);
-    cout << "下树完毕" << endl;
+    cout << "下树完毕";
     delete con;
     // 可能不准(不一致)
     cout << " 剩余客户端:" << users_.size() << endl;
+    cout << "剩余任务队列长度:" << pool_.getQueSize() << endl;
 }

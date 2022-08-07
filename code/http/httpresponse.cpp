@@ -118,15 +118,42 @@ void HttpResponse::responseAPI()
 {
     cout << "HttpResponse::responseAPI()";
     string reqType = httpRequest_->getArg("type");
-    // cout << "reqType=" << reqType << endl;
+
     if (reqType == "ajaxVerifyRegName")
     {
+        bool isExist = true;
         string name = httpRequest_->getArg("name");
+        if (name.size() != 0)
+        {
+            MYSQL *sql;
+            SqlRAII raii(&sql, SqlConnPool::getInstance());
+            char query[128];
+            snprintf(query, 128, "SELECT `uid` FROM `users` WHERE `name` = \'%s\' LIMIT 1", name.data());
+            cout << query << endl;
+
+            MYSQL_RES *res = nullptr;
+            if (mysql_real_query(sql, query, strlen(query)))
+            {
+                cout << "查询失败!";
+            }
+            else
+            {
+                res = mysql_store_result(sql);
+                int m = res->row_count;
+                if (m == 0)
+                {
+                    isExist = false;
+                }
+            }
+            mysql_free_result(res);
+        }
+
         cout << "name=" << name << endl;
         // cout << "可写长度:" << pBuff_->readableBytes() << endl;
+
         makeStatusLine();
         makeHeader();
-        string res = "verifyOk";
+        string res = isExist ? "user_name_is_exist" : "verifyOk";
         pBuff_->append("Content-Length: " + std::to_string(res.size()) + "\r\n\r\n" + res);
         // cout << "可写长度:" << pBuff_->readableBytes() << endl;
     }

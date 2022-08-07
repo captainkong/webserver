@@ -32,7 +32,7 @@ SqlConnPool *SqlConnPool::getInstance()
 
 SqlConnPool::~SqlConnPool()
 {
-    destory();
+    destroy();
 }
 
 MYSQL *SqlConnPool::getSqlConnect()
@@ -66,7 +66,7 @@ int SqlConnPool::getFreeCount()
     return sqlConnQue.size();
 }
 
-void SqlConnPool::destory()
+void SqlConnPool::destroy()
 {
     // 只能保证空闲的连接被安全关闭
     std::lock_guard<std::mutex> locker(mux_);
