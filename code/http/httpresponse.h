@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <random>
 
 using std::string;
 using std::unordered_map;
@@ -22,7 +23,7 @@ private:
     static const std::unordered_map<string, string> SUFFIX_TYPE;
     static const std::unordered_map<int, std::string> CODE_STATUS;
     static const std::unordered_map<int, std::string> CODE_PATH;
-    string rootDir_;
+    const string rootDir_;
     Buffer *pBuff_;
     HttpRequest *httpRequest_;
 

@@ -1,12 +1,12 @@
 CC = g++
-CFLAGS = -Wall
+CFLAGS = -Wall -std=c++11
 LIBS =  -lpthread
 
-PROGS =	server webserver
+PROGS =	webserver
 
 all:	${PROGS}
 
-server: test.cpp echoserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o
+echoserver: test.cpp echoserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o
 		${CC} ${CFLAGS} -o $@ $^  ${LIBS}
 
 webserver: server.cpp webserver.o ../buffer/buffer.o ../poller/epoller.o ../pool/threadpool.o ../pool/sqlconnpool.o ../http/httprequest.o ../http/httpresponse.o ../http/httpconnect.o 

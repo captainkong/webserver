@@ -8,8 +8,11 @@
 #include <unordered_map>
 #include <iostream>
 #include <regex>
+#include <random>
 
 using std::string;
+
+class WebServer;
 
 class HttpRequest
 {
@@ -42,13 +45,15 @@ public:
     string getArg(const string &key) const;
     // 获取keepAlive
     bool getIsKeepAlive() const;
-
     // 注册新用户
     bool regUser(const string &user_name, const string &password);
     // 登录
     bool login(const string &user_name, const string &password);
     // 判断ID是否已存在
     bool isExistsUser(const string &user_name);
+
+    // 记录登录信息
+    static std::unordered_map<string, string> session_;
 
 private:
     enum PRASE_STATE
@@ -75,11 +80,17 @@ private:
     // 解析请求行
     bool praseRequest(const string &line);
     // 解析请求头
-    void praseHeader(const string &line);
+    void praseHeader(const string &line, size_t readableSize);
     // 解析请求体
     bool praseBody(const string &line);
     // 解析get/post的传参
     bool praseArg(const string &line, bool isGet);
+    // 解析请求头中的Cookie
+    bool praseCookie(const string &line);
+    // 初始化token
+    void initToken(size_t len);
+    // 获取定长随机字符串
+    string getRandStr(size_t len);
 };
 
 #endif // HTTP_REQUEST_H

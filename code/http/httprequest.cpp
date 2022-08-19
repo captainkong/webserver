@@ -4,6 +4,8 @@ using std::cout;
 using std::endl;
 #include <sys/time.h>
 
+std::unordered_map<string, string> HttpRequest::session_;
+
 HttpRequest::HttpRequest() : state_(REQUEST), requestType_(OTHERS)
 {
 }
@@ -31,7 +33,12 @@ bool HttpRequest::prase(Buffer &read_buff)
         {
         case REQUEST:
             if (!praseRequest(line))
+            {
+                cout << "请求行解析失败!" << endl;
                 return false;
+            }
+            cout << "请求行解析成功!" << endl;
+
             break;
         case HEADER:
             if (line.size() == 0)
@@ -39,9 +46,7 @@ bool HttpRequest::prase(Buffer &read_buff)
                 state_ = BODY;
                 break;
             }
-            praseHeader(line);
-            if (read_buff.readableBytes() <= 2)
-                state_ = FINISH;
+            praseHeader(line, read_buff.readableBytes());
             break;
         case BODY:
             praseBody(line);
@@ -53,7 +58,7 @@ bool HttpRequest::prase(Buffer &read_buff)
     }
     read_buff.retrieveAll();
     assert(state_ == FINISH);
-    // cout << "解析成功!" << endl;
+    cout << "解析成功!" << endl;
 
     return true;
 }
@@ -90,22 +95,36 @@ bool HttpRequest::praseRequest(const string &line)
     return false;
 }
 
-void HttpRequest::praseHeader(const string &line)
+void HttpRequest::praseHeader(const string &line, size_t readableSize)
 {
     // timeval startTime, endTime;
     // gettimeofday(&startTime, NULL);
     // Header的格式 key:_value
     std::regex pattern("^([^:]*): ?(.*)$");
     std::smatch match;
+    bool flag = false;
     if (std::regex_match(line, match, pattern))
     {
+        if (match[1] == "Cookie")
+        {
+            flag = praseCookie(match[2]);
+        }
+        cout << match[1] << ":" << match[2] << endl;
         headers_[match[1]] = match[2];
-        // cout << match[1] << ":" << match[2] << endl;
     }
     else
     {
         cout << "解析失败!" << endl;
         state_ = BODY;
+    }
+    if (readableSize <= 2)
+    {
+        state_ = FINISH;
+        if (flag && path_ == "/login.html")
+        {
+            // 根据cookie验证成功,跳过登录过程
+            path_ = "/welcome.html";
+        }
     }
 
     // gettimeofday(&endTime, NULL);
@@ -116,6 +135,7 @@ void HttpRequest::praseHeader(const string &line)
 bool HttpRequest::praseBody(const string &line)
 {
     cout << "HttpRequest::praseBody:" << line << endl;
+    // cout << "token=" << token_ << endl;
     praseArg(line, false);
     // 使用post的几种可能 注册/登录/ajax请求
     // 根据请求路径判断
@@ -132,6 +152,18 @@ bool HttpRequest::praseBody(const string &line)
             path_ = "/error.html";
         else
             path_ = "/welcome.html";
+    }
+    if (path_ == "/welcome.html")
+    {
+        // 说明此时有登录事件
+        // 初始化一个长度为16的随机字符串当做token
+        // initToken(16);
+        // cout << "token=" << token_ << endl;
+        string token = getRandStr(16);
+        string username = post_["username"];
+        assert(username.size() > 0);
+        HttpRequest::session_[username] = token;
+        // cout << HttpRequest::session_[token_] << endl;
     }
 
     return false;
@@ -187,6 +219,81 @@ bool HttpRequest::praseArg(const string &line, bool isGet)
     }
 
     return false;
+}
+
+bool HttpRequest::praseCookie(const string &line)
+{
+    // std::unordered_map<string, string> session_;
+    cout << line << endl;
+    int n = line.size();
+    string key, value;
+    string name, token;
+    int sta = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        // cout << "i=" << i << ",str[i]=" << line[i] << endl;
+        if (line[i] == '=')
+        {
+            sta = 1;
+        }
+        else if (line[i] == ';' || i == n - 1)
+        {
+            if (i == n - 1)
+            {
+                value += line[i];
+            }
+            // cout << "cookie: key=" << key << ",value=" << value << endl;
+            if (key == "user")
+            {
+                name = value;
+            }
+            else if (key == "token")
+            {
+                token = value;
+            }
+            // cookie_[key] = value;
+            // cookie_.emplace(key, value);
+            key = "";
+            value = "";
+            sta = 0;
+            if (i != n - 1)
+            {
+                i += 1;
+            }
+        }
+        else
+        {
+            if (sta == 0)
+            {
+                key += line[i];
+            }
+            else
+            {
+                value += line[i];
+            }
+        }
+    }
+    cout << "username:" << name << ",token=" << token << endl;
+    if (token == session_[name])
+    {
+        cout << "cookie登录验证成功!\n";
+        return true;
+    }
+    return false;
+}
+
+string HttpRequest::getRandStr(size_t len)
+{
+    static constexpr char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static int cchLen = strlen(CCH);
+    std::random_device rd;
+    string str;
+    str.resize(len);
+    for (size_t i = 0; i < len; ++i)
+    {
+        str[i] = CCH[rd() % cchLen];
+    }
+    return str;
 }
 
 HttpRequest::REQUEST_TYPE HttpRequest::getRequestType() const

@@ -42,22 +42,27 @@ const unordered_map<int, string> HttpResponse::CODE_PATH = {
 
 HttpResponse::HttpResponse(string path) : rootDir_(path), mmFile_(nullptr)
 {
+    cout << "HttpResponse::HttpResponse rootDir_=" << path << endl;
 }
 
 HttpResponse::~HttpResponse()
 {
     unmapFile();
+    cout << "response destruct!" << endl;
 }
 
 void HttpResponse::response(HttpRequest *request, Buffer *buff, string &path, bool isKeepAlive, int code)
 {
     cout << "HttpResponse::response  path:" << path << ",code:" << code << endl;
+    cout << "rootDir=" << rootDir_ << endl;
+    // cout <<
     pBuff_ = buff;
     path_ = path;
     isKeepAlive_ = isKeepAlive;
     statusCode_ = code;
     httpRequest_ = request;
 
+    // 响应 AJAX请求
     if (path == "/api")
     {
         responseAPI();
@@ -66,6 +71,7 @@ void HttpResponse::response(HttpRequest *request, Buffer *buff, string &path, bo
     prasePath();
 
     string absDir = rootDir_ + path_;
+    cout << rootDir_ << endl;
     cout << "absDir=" << absDir << endl;
     if (statusCode_ == 200)
     {
@@ -191,6 +197,20 @@ void HttpResponse::makeHeader()
         pBuff_->append("close\r\n");
     }
     pBuff_->append("Server: CaptainKong's Server/0.1(Ubuntu)\r\n");
+    if (path_ == "/welcome.html")
+    {
+        // if(HttpRequest::cookie_.count)
+        cout << "response 响应欢迎页面" << endl;
+        string user = httpRequest_->getPost("username");
+        string token = HttpRequest::session_[user];
+        cout << "user=" << user << ",token=" << token << endl;
+        if (user.size() && token.size())
+        {
+            pBuff_->append("Set-Cookie: user=" + user + "\r\n");
+            pBuff_->append("Set-Cookie: token=" + token + "\r\n");
+        }
+    }
+
     // 添加文件类型
     pBuff_->append("Content-Type: " + getFileType() + "\r\n");
 }
